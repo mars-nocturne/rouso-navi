@@ -1,5 +1,5 @@
 /* ============================================================
-   労組ナビ — 労働組合づくりアプリ
+   労組結成ナビ — 労働組合づくりアプリ
    バニラJS / オフライン対応PWA。
    - クラウド未設定: データは端末内(localStorage)に保存。
    - クラウド設定済み(config.js): Supabase で複数人共有＋リアルタイム同期。
@@ -740,7 +740,7 @@ function openSettings() {
     save(); $('#unionNameDisplay').textContent = s.unionName; closeModal(); toast('設定を保存しました'); go(current);
   });
   $('#exportAll').addEventListener('click', () =>
-    downloadFile(JSON.stringify(DB, null, 2), `労組ナビ_バックアップ_${new Date().toISOString().slice(0,10)}.json`, 'application/json'));
+    downloadFile(JSON.stringify(DB, null, 2), `労組結成ナビ_バックアップ_${new Date().toISOString().slice(0,10)}.json`, 'application/json'));
   $('#importAll').addEventListener('click', () => $('#importFile').click());
   $('#importFile').addEventListener('change', e => {
     const file = e.target.files[0]; if (!file) return;

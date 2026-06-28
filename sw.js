@@ -1,5 +1,5 @@
-/* 労組ナビ Service Worker — オフライン対応 */
-const CACHE = 'union-app-v5';
+/* 労組結成ナビ Service Worker — オフライン対応 */
+const CACHE = 'union-app-v6';
 const ASSETS = [
   './',
   './index.html',
