@@ -1,0 +1,18 @@
+{
+  "name": "結成ナビ｜労働組合づくりアプリ",
+  "short_name": "結成ナビ",
+  "description": "組合員の名簿管理・加入カードの署名・お知らせ・投票ができる、労働組合づくりのためのアプリ。",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f7f9",
+  "theme_color": "#b91c1c",
+  "categories": ["productivity", "social"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
