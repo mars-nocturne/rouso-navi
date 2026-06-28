@@ -9,6 +9,6 @@
    ※ 空欄のままなら、アプリは端末内のみ（オフライン単体）で動作します。
    ============================================================ */
 window.UNION_CONFIG = {
-  url: "",       // 例: "https://xxxxxxxx.supabase.co"
-  anonKey: "",   // 例: "eyJhbGciOiJIUzI1NiIsIn..."
+  url: "https://drkxgjvoqgqjubderbab.supabase.co",
+  anonKey: "sb_publishable_DM1yUUo_lGtcdPi7dMyieA_r_EOmj7J",
 };

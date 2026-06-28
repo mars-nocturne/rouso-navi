@@ -1,5 +1,5 @@
 /* 結成ナビ Service Worker — オフライン対応 */
-const CACHE = 'union-app-v3';
+const CACHE = 'union-app-v4';
 const ASSETS = [
   './',
   './index.html',
