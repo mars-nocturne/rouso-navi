@@ -154,6 +154,16 @@ document.querySelectorAll('.tab').forEach(tab =>
 
 $('#settingsBtn').addEventListener('click', openSettings);
 
+/* ヘッダーの組合名タップ → 組合の切り替え／管理（クラウド接続時） */
+(function () {
+  const brand = document.querySelector('.brand');
+  if (!brand) return;
+  brand.style.cursor = 'pointer';
+  brand.addEventListener('click', () => {
+    if (typeof Cloud !== 'undefined' && Cloud.configured()) openCloudConnect();
+  });
+})();
+
 /* ============================================================
    ホーム画面
    ============================================================ */
@@ -631,49 +641,86 @@ function openCloudConnect() {
     $('#closeCC').addEventListener('click', closeModal);
     return;
   }
-  if (Cloud.org) {
-    openModal(`<h3>☁ 共有中の組合</h3>
-      <p style="font-weight:700;font-size:16px;margin:0">${esc(Cloud.org.name)}</p>
-      <p class="muted" style="font-size:13px;margin:6px 0 14px">仲間にこの<b>参加コード</b>を伝えると、同じデータを共有できます。</p>
-      <div class="card center" style="background:var(--red-light);border:0">
-        <div style="font-size:32px;font-weight:800;letter-spacing:4px;color:var(--red)">${esc(Cloud.org.join_code)}</div>
+  if (Cloud.orgs && Cloud.orgs.length) {
+    // 複数の組合を管理・切り替え
+    const list = Cloud.orgs.map(o => `
+      <div class="item" data-sw="${o.id}" style="margin-bottom:8px;${o.id === Cloud.org.id ? 'border-color:var(--red)' : 'cursor:pointer'}">
+        <div class="card-row">
+          <div style="min-width:0">
+            <div class="item-title">${o.id === Cloud.org.id ? '✓ ' : ''}${esc(o.name)}</div>
+            <div class="item-meta">コード：${esc(o.join_code)}</div>
+          </div>
+          ${o.id === Cloud.org.id ? '<span class="badge badge-green">表示中</span>' : '<button class="btn btn-ghost btn-sm" data-sw="' + o.id + '">切替</button>'}
+        </div>
+      </div>`).join('');
+    openModal(`<h3>☁ 組合の管理（${Cloud.orgs.length}）</h3>
+      <p class="muted" style="font-size:13px;margin:0 0 10px">複数の組合を切り替えて管理できます。名前をタップで切替。</p>
+      ${list}
+      <div class="card center" style="background:var(--red-light);border:0;margin-top:4px">
+        <div class="item-meta" style="color:var(--red)">表示中の組合の参加コード</div>
+        <div style="font-size:28px;font-weight:800;letter-spacing:4px;color:var(--red)">${esc(Cloud.org.join_code)}</div>
       </div>
       <div class="btn-row" style="flex-direction:column">
         <button class="btn btn-ghost" id="copyCode">📋 参加コードをコピー</button>
-        <button class="btn btn-ghost" id="leaveOrg" style="color:#b91c1c">この端末を切断する</button>
-        <button class="btn btn-primary" id="closeCC2">閉じる</button>
+        <button class="btn btn-primary" id="addOrg">＋ 別の組合を作成／参加</button>
+        <button class="btn btn-ghost" id="leaveOrg" style="color:#b91c1c">表示中の組合をこの端末から外す</button>
+        <button class="btn btn-ghost" id="closeCC2">閉じる</button>
       </div>`);
     $('#closeCC2').addEventListener('click', closeModal);
     $('#copyCode').addEventListener('click', () => { navigator.clipboard?.writeText(Cloud.org.join_code); toast('コピーしました'); });
+    $('#addOrg').addEventListener('click', () => { closeModal(); openOrgAddForm(); });
+    document.querySelectorAll('[data-sw]').forEach(el => el.addEventListener('click', () => {
+      const id = el.dataset.sw;
+      if (id === Cloud.org.id) return;
+      closeModal(); switchOrg(id);
+    }));
     $('#leaveOrg').addEventListener('click', () => {
-      if (confirm('この端末をクラウドから切断します。クラウド上のデータは消えません。よろしいですか？')) {
-        Cloud.leave(); toast('切断しました'); closeModal(); go('home');
+      if (confirm('表示中の組合をこの端末から外します。クラウド上のデータは消えません。よろしいですか？')) {
+        Cloud.leaveOrg(Cloud.org.id);
+        closeModal();
+        if (Cloud.org) { switchOrg(Cloud.org.id); }
+        else {
+          DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = [];
+          DB.settings.unionName = '私たちの労働組合'; save();
+          $('#unionNameDisplay').textContent = DB.settings.unionName; go('home');
+        }
+        toast('外しました');
       }
     });
     return;
   }
-  // 未接続：作成 or 参加
-  openModal(`<h3>☁ 仲間とデータを共有</h3>
+  // 未参加：作成 or 参加
+  openOrgAddForm();
+}
+
+/* 組合の作成／参加フォーム */
+function openOrgAddForm() {
+  openModal(`<h3>☁ 組合を作成／参加</h3>
     <div class="card">
       <strong style="font-size:14px">🆕 新しく組合をつくる</strong>
-      <p class="muted" style="font-size:12px;margin:4px 0 10px">あなたが代表として領域を作成し、参加コードを仲間に配ります。</p>
-      <div class="field" style="margin:0 0 10px"><input id="cc_name" placeholder="組合名（例：◯◯ユニオン）" value="${esc(DB.settings.unionName)}"></div>
+      <p class="muted" style="font-size:12px;margin:4px 0 10px">代表として領域を作成し、参加コードを仲間に配ります。</p>
+      <div class="field" style="margin:0 0 10px"><input id="cc_name" placeholder="組合名（例：◯◯ユニオン）"></div>
       <button class="btn btn-primary" id="cc_create">作成して参加コードを発行</button>
     </div>
     <div class="card">
       <strong style="font-size:14px">🔑 既存の組合に参加する</strong>
-      <p class="muted" style="font-size:12px;margin:4px 0 10px">代表から受け取った参加コードを入力します。</p>
+      <p class="muted" style="font-size:12px;margin:4px 0 10px">受け取った参加コードを入力します。</p>
       <div class="field" style="margin:0 0 10px"><input id="cc_code" placeholder="参加コード（6桁）" style="text-transform:uppercase"></div>
       <button class="btn btn-primary" id="cc_join">参加する</button>
     </div>
     <button class="btn btn-ghost" id="cc_cancel">キャンセル</button>`);
-  $('#cc_cancel').addEventListener('click', closeModal);
+  $('#cc_cancel').addEventListener('click', () => { closeModal(); if (Cloud.orgs && Cloud.orgs.length) openCloudConnect(); });
   $('#cc_create').addEventListener('click', async () => {
     const name = $('#cc_name').value.trim() || '労働組合';
     const btn = $('#cc_create'); btn.disabled = true; btn.textContent = '作成中…';
     try {
+      const first = Cloud.orgs.length === 0;
       await Cloud.createOrg(name);
-      await pushLocalToCloud(); // いまの端末内データをクラウドへ反映
+      if (first) {
+        await pushLocalToCloud();  // 初回だけ端末内データを移行
+      } else {
+        DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = []; save();  // 追加の組合は空から
+      }
       DB.settings.unionName = name; save();
       $('#unionNameDisplay').textContent = name;
       Cloud.subscribe(refreshFromCloud);
@@ -690,18 +737,34 @@ function openCloudConnect() {
     if (!code) { toast('参加コードを入力してください'); return; }
     const btn = $('#cc_join'); btn.disabled = true; btn.textContent = '参加中…';
     try {
-      const org = await Cloud.joinOrg(code);
+      const org = await Cloud.joinOrg(code);   // 成功後に手元をクリア（失敗時のデータ消失を防ぐ）
+      DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = []; save();
       DB.settings.unionName = org.name; save();
       $('#unionNameDisplay').textContent = org.name;
       Cloud.subscribe(refreshFromCloud);
       MY_VOTER_ID = await Cloud.userId();
       await refreshFromCloud();
-      closeModal(); toast('参加しました ✊'); go('home');
+      closeModal(); toast('参加しました ✊'); openCloudConnect();
     } catch (e) {
       btn.disabled = false; btn.textContent = '参加する';
       toast(e.message || '参加に失敗しました');
     }
   });
+}
+
+/* 組合を切り替え（アクティブ変更 → その組合のデータを取得） */
+async function switchOrg(id) {
+  const target = Cloud.orgs.find(o => o.id === id);
+  if (!target) return;
+  toast('切り替え中…');
+  try { await Cloud.joinOrg(target.join_code); }  // メンバー資格を確実にしつつアクティブ化
+  catch (e) { Cloud.setActive(id); }
+  DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = []; save();
+  DB.settings.unionName = Cloud.org.name; save();
+  $('#unionNameDisplay').textContent = Cloud.org.name;
+  MY_VOTER_ID = await Cloud.userId();
+  await refreshFromCloud();
+  toast('「' + Cloud.org.name + '」に切替');
 }
 
 /* 端末内の既存データをクラウドへ初期反映（組合作成時） */

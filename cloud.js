@@ -6,7 +6,8 @@
 
 const Cloud = {
   client: null,
-  org: null,        // { id, name, join_code }
+  orgs: [],         // 参加中の組合一覧 [{id,name,join_code}]
+  org: null,        // 現在アクティブな組合
   _uid: null,
   lastError: null,
 
@@ -28,14 +29,44 @@ const Cloud = {
         const { error } = await this.client.auth.signInAnonymously();
         if (error) throw error;
       }
-      const saved = localStorage.getItem('union_org');
-      if (saved) this.org = JSON.parse(saved);
+      this._loadOrgs();
       return true;
     } catch (e) {
       this.lastError = e;
       console.warn('[Cloud] init failed:', e.message);
       return false;
     }
+  },
+
+  _loadOrgs() {
+    try { this.orgs = JSON.parse(localStorage.getItem('union_orgs') || '[]'); } catch (e) { this.orgs = []; }
+    // 旧形式（単一 union_org）からの移行
+    if (!this.orgs.length) {
+      const old = localStorage.getItem('union_org');
+      if (old) { try { this.orgs = [JSON.parse(old)]; localStorage.setItem('union_orgs', JSON.stringify(this.orgs)); } catch (e) {} }
+    }
+    const activeId = localStorage.getItem('union_active_org');
+    this.org = this.orgs.find(o => o.id === activeId) || this.orgs[0] || null;
+  },
+
+  _persist() {
+    localStorage.setItem('union_orgs', JSON.stringify(this.orgs));
+    if (this.org) localStorage.setItem('union_active_org', this.org.id);
+    else localStorage.removeItem('union_active_org');
+  },
+
+  _addOrg(o) {
+    const e = { id: o.id, name: o.name, join_code: o.join_code };
+    const i = this.orgs.findIndex(x => x.id === e.id);
+    if (i >= 0) this.orgs[i] = e; else this.orgs.push(e);
+    this.org = e;
+    this._persist();
+  },
+
+  /** アクティブな組合を切り替え */
+  setActive(id) {
+    const o = this.orgs.find(x => x.id === id);
+    if (o) { this.org = o; this._persist(); }
   },
 
   async userId() {
@@ -45,16 +76,11 @@ const Cloud = {
     return this._uid;
   },
 
-  _setOrg(o) {
-    this.org = { id: o.id, name: o.name, join_code: o.join_code };
-    localStorage.setItem('union_org', JSON.stringify(this.org));
-  },
-
   /** 新しい組合（オンライン領域）を作成し参加コードを得る */
   async createOrg(name) {
     const { data, error } = await this.client.rpc('create_org', { p_name: name });
     if (error) throw error;
-    this._setOrg(data);
+    this._addOrg(data);
     return this.org;
   },
 
@@ -63,14 +89,19 @@ const Cloud = {
     const { data, error } = await this.client.rpc('join_org', { p_code: (code || '').trim().toUpperCase() });
     if (error) throw error;
     if (!data) throw new Error('参加コードが見つかりません');
-    this._setOrg(data);
+    this._addOrg(data);
     return this.org;
   },
 
-  leave() {
-    this.org = null;
-    localStorage.removeItem('union_org');
+  /** 指定した組合をこの端末から外す（クラウド上のデータは残る） */
+  leaveOrg(id) {
+    this.orgs = this.orgs.filter(x => x.id !== id);
+    if (this.org && this.org.id === id) this.org = this.orgs[0] || null;
+    this._persist();
   },
+
+  /** 後方互換：アクティブな組合を外す */
+  leave() { if (this.org) this.leaveOrg(this.org.id); },
 
   /** 全コレクションを取得（{members,cards,notices,polls,votes}） */
   async pullAll() {
