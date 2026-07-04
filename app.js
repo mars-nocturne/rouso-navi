@@ -84,9 +84,18 @@ async function refreshFromCloud() {
   _refreshing = true;
   try {
     const data = await Cloud.pullAll();
-    DB.members = data.members; DB.cards = data.cards;
-    DB.notices = data.notices; DB.polls = data.polls; DB.votes = data.votes;
-    save();
+    const cloudEmpty = !(data.members.length || data.cards.length || data.notices.length || data.polls.length || data.votes.length);
+    const localHas = DB.members.length || DB.cards.length || DB.notices.length || DB.polls.length || DB.votes.length;
+    if (cloudEmpty && localHas) {
+      // クラウドが空なのに端末にデータがある = 接続/権限の一時的な問題の可能性。
+      // 端末のデータは絶対に消さず、クラウドへ復元を試みる（自己修復）。
+      console.warn('[Cloud] empty cloud with local data — keeping local & re-pushing');
+      pushLocalToCloud().catch(() => {});
+    } else {
+      DB.members = data.members; DB.cards = data.cards;
+      DB.notices = data.notices; DB.polls = data.polls; DB.votes = data.votes;
+      save();
+    }
     go(current);
   } catch (e) {
     console.warn('[Cloud] pull failed:', e && e.message);
@@ -700,6 +709,9 @@ async function pushLocalToCloud() {
   for (const coll of ['members', 'cards', 'notices', 'polls']) {
     for (const obj of DB[coll]) { try { await Cloud.upsert(coll, obj); } catch (e) { /* 続行 */ } }
   }
+  for (const v of DB.votes) {
+    if (v.voter_id === MY_VOTER_ID) { try { await Cloud.vote(v.poll_id, v.opt); } catch (e) { /* 続行 */ } }
+  }
 }
 
 /* ============================================================
@@ -774,6 +786,11 @@ async function boot() {
   if (Cloud.configured()) {
     await Cloud.init();
     if (Cloud.org) {
+      // 匿名IDが変わってもメンバー資格を失わないよう、保存済みの参加コードで毎回“再参加”（冪等）
+      if (Cloud.org.join_code) {
+        try { await Cloud.joinOrg(Cloud.org.join_code); }
+        catch (e) { console.warn('[Cloud] rejoin skipped:', e && e.message); }
+      }
       MY_VOTER_ID = await Cloud.userId();
       Cloud.subscribe(refreshFromCloud);
       await refreshFromCloud();
