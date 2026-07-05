@@ -1,5 +1,5 @@
 /* 労組結成ナビ Service Worker — オフライン対応 */
-const CACHE = 'union-app-v8';
+const CACHE = 'union-app-v9';
 const ASSETS = [
   './',
   './index.html',
@@ -23,9 +23,12 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-/* cache-first（静的アセット）。失敗時はネットワークへ。 */
+/* cache-first（静的アセット）。失敗時はネットワークへ。
+   同一オリジンのみ対象。Supabase等のクロスオリジンAPI応答をキャッシュすると
+   古いデータやエラーを返し続けてしまうため、外部通信には関与しない。 */
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
       const copy = res.clone();
