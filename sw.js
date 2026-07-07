@@ -1,5 +1,5 @@
 /* 労組結成ナビ Service Worker — オフライン対応 */
-const CACHE = 'union-app-v9';
+const CACHE = 'union-app-v11';
 const ASSETS = [
   './',
   './index.html',
@@ -12,8 +12,14 @@ const ASSETS = [
   './icons/icon-512.png',
 ];
 
+/* 事前キャッシュはHTTPキャッシュを迂回して必ずサーバーから取得する
+   （更新時に古いファイルが新バージョンのキャッシュへ混入するのを防ぐ） */
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {

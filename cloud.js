@@ -103,11 +103,11 @@ const Cloud = {
   /** 後方互換：アクティブな組合を外す */
   leave() { if (this.org) this.leaveOrg(this.org.id); },
 
-  /** 全コレクションを取得（{members,cards,notices,polls,votes}） */
+  /** 全コレクションを取得（{members,cards,notices,polls,votes,payments}） */
   async pullAll() {
     const o = this.org.id;
-    const out = { members: [], cards: [], notices: [], polls: [], votes: [] };
-    for (const t of ['members', 'cards', 'notices', 'polls']) {
+    const out = { members: [], cards: [], notices: [], polls: [], votes: [], payments: [] };
+    for (const t of ['members', 'cards', 'notices', 'polls', 'payments']) {
       const { data, error } = await this.client.from(t).select('data').eq('org_id', o);
       if (error) throw error;
       out[t] = (data || []).map(r => r.data);

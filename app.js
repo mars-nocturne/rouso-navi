@@ -18,6 +18,7 @@ const defaultDB = () => ({
   notices: [],
   polls: [],
   votes: [], // { poll_id, voter_id, opt }
+  payments: [], // 納付記録 { id, memberId, period:'YYYY-MM', amount, method, note, paidAt } ＋ 徴収設定（id='dues_config'）
 });
 
 let DB = load();
@@ -84,8 +85,8 @@ async function refreshFromCloud() {
   _refreshing = true;
   try {
     const data = await Cloud.pullAll();
-    const cloudEmpty = !(data.members.length || data.cards.length || data.notices.length || data.polls.length || data.votes.length);
-    const localHas = DB.members.length || DB.cards.length || DB.notices.length || DB.polls.length || DB.votes.length;
+    const cloudEmpty = !(data.members.length || data.cards.length || data.notices.length || data.polls.length || data.votes.length || data.payments.length);
+    const localHas = DB.members.length || DB.cards.length || DB.notices.length || DB.polls.length || DB.votes.length || DB.payments.length;
     if (cloudEmpty && localHas) {
       // クラウドが空なのに端末にデータがある = 接続/権限の一時的な問題の可能性。
       // 端末のデータは絶対に消さず、クラウドへ復元を試みる（自己修復）。
@@ -94,6 +95,7 @@ async function refreshFromCloud() {
     } else {
       DB.members = data.members; DB.cards = data.cards;
       DB.notices = data.notices; DB.polls = data.polls; DB.votes = data.votes;
+      DB.payments = data.payments;
       save();
     }
     go(current);
@@ -138,7 +140,7 @@ $('#modalBackdrop').addEventListener('click', (e) => {
 /* ============================================================
    ルーティング
    ============================================================ */
-const routes = { home: renderHome, members: renderMembers, card: renderCard, notices: renderNotices, polls: renderPolls };
+const routes = { home: renderHome, members: renderMembers, card: renderCard, notices: renderNotices, polls: renderPolls, dues: renderDues };
 let current = 'home';
 
 function go(route) {
@@ -625,6 +627,186 @@ function pollForm() {
 }
 
 /* ============================================================
+   組合費（納付管理）
+   徴収設定は payments コレクション内の固定ID('dues_config')の
+   共有レコードとして保存する（組合の全員に同期される）。
+   決済リンクは必ずアプリ外のブラウザで開く（Play 決済ポリシー対応）。
+   ============================================================ */
+const DUES_CONFIG_ID = 'dues_config';
+const PAY_METHODS = ['決済リンク', '銀行振込', '現金', 'その他'];
+const duesConfig = () => DB.payments.find(p => p.id === DUES_CONFIG_ID) || { id: DUES_CONFIG_ID, amount: 100, payUrl: '', payInfo: '' };
+const duesRecords = () => DB.payments.filter(p => p.id !== DUES_CONFIG_ID);
+const periodKey = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+const periodLabel = (key) => { const [y, m] = key.split('-'); return `${y}年${+m}月`; };
+const shiftPeriod = (key, delta) => { const [y, m] = key.split('-').map(Number); return periodKey(new Date(y, m - 1 + delta, 1)); };
+const yen = (n) => '¥' + (Number(n) || 0).toLocaleString('ja-JP');
+let duesPeriod = periodKey(new Date());
+
+function renderDues() {
+  const v = $('#view');
+  const cfg = duesConfig();
+  const recs = duesRecords().filter(r => r.period === duesPeriod);
+  const paidIds = new Set(recs.map(r => r.memberId));
+  const total = DB.members.length;
+  const paid = DB.members.filter(m => paidIds.has(m.id)).length;
+  const sum = recs.reduce((a, r) => a + (Number(r.amount) || 0), 0);
+  const pct = total ? Math.round((paid / total) * 100) : 0;
+
+  v.innerHTML = `
+    <div class="list-head">
+      <div class="section-title" style="margin:0">💰 組合費の納付管理</div>
+      <button class="btn btn-ghost btn-sm" id="exportDues">⬇ CSV</button>
+    </div>
+
+    <div class="card">
+      <div class="card-row">
+        <button class="btn btn-ghost btn-sm" id="prevPeriod">◀ 前月</button>
+        <strong style="font-size:16px">${periodLabel(duesPeriod)}</strong>
+        <button class="btn btn-ghost btn-sm" id="nextPeriod">翌月 ▶</button>
+      </div>
+      <div class="card-row" style="margin-top:12px">
+        <span style="font-size:13px">納付済み <strong style="color:var(--red)">${paid}</strong> / ${total} 名</span>
+        <span class="muted" style="font-size:13px">集計 ${yen(sum)}</span>
+      </div>
+      <div class="progress"><span style="width:${pct}%"></span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-row">
+        <div><strong style="font-size:14px">月額 ${yen(cfg.amount)}</strong><div class="muted" style="font-size:12px">組合費の設定（全員に共有）</div></div>
+        <button class="btn btn-ghost btn-sm" id="duesSettings">⚙ 変更</button>
+      </div>
+      ${cfg.payUrl ? `<button class="btn btn-primary" id="payNow" style="margin-top:12px">💳 組合費を納付する（外部サイト）</button>` : ''}
+      ${cfg.payInfo ? `<div class="item-body" style="margin-top:10px">${esc(cfg.payInfo)}</div>` : ''}
+      ${!cfg.payUrl && !cfg.payInfo ? `<p class="muted" style="font-size:12px;margin:10px 0 0">「⚙ 変更」から決済リンク（Stripe等）や振込先の案内を設定すると、ここに納付ボタンが表示されます。</p>` : ''}
+    </div>
+
+    <div class="section-title">📋 ${periodLabel(duesPeriod)}の納付状況</div>
+    <div id="duesList"></div>
+  `;
+  $('#prevPeriod').addEventListener('click', () => { duesPeriod = shiftPeriod(duesPeriod, -1); renderDues(); });
+  $('#nextPeriod').addEventListener('click', () => { duesPeriod = shiftPeriod(duesPeriod, 1); renderDues(); });
+  $('#duesSettings').addEventListener('click', duesSettingsForm);
+  $('#exportDues').addEventListener('click', exportDuesCSV);
+  const pay = $('#payNow');
+  if (pay) pay.addEventListener('click', () => window.open(cfg.payUrl, '_blank', 'noopener'));
+  drawDuesList();
+}
+
+function drawDuesList() {
+  const el = $('#duesList');
+  if (!DB.members.length) {
+    el.innerHTML = `<div class="empty"><div class="e-ico">💰</div><p>名簿に仲間を登録すると、<br>ここで納付状況を管理できます。</p></div>`;
+    return;
+  }
+  const recs = duesRecords().filter(r => r.period === duesPeriod);
+  const byMember = new Map(recs.map(r => [r.memberId, r]));
+  const rows = [...DB.members].sort((a, b) => {
+    const pa = byMember.has(a.id) ? 1 : 0, pb = byMember.has(b.id) ? 1 : 0;
+    return (pa - pb) || (b.createdAt - a.createdAt); // 未納を上に
+  });
+  el.innerHTML = rows.map(m => {
+    const r = byMember.get(m.id);
+    return `
+    <div class="item" data-dues="${m.id}" style="cursor:pointer">
+      <div class="item-flex">
+        <div class="avatar">${esc(initial(m.name))}</div>
+        <div style="flex:1;min-width:0">
+          <div class="item-title">${esc(m.name)}</div>
+          <div class="item-meta">${r ? `${fmtDate(r.paidAt)}・${esc(r.method || '—')}・${yen(r.amount)}` : 'タップして納付を記録'}</div>
+        </div>
+        ${r ? '<span class="badge badge-green">納付済</span>' : '<span class="badge badge-amber">未納</span>'}
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-dues]').forEach(it =>
+    it.addEventListener('click', () => duesRecordForm(it.dataset.dues)));
+}
+
+function duesRecordForm(memberId) {
+  const m = DB.members.find(x => x.id === memberId);
+  if (!m) return;
+  const cfg = duesConfig();
+  const r = duesRecords().find(x => x.memberId === memberId && x.period === duesPeriod);
+  if (r) {
+    openModal(`<h3>納付記録 — ${esc(m.name)}</h3>
+      <p style="font-size:13px">${periodLabel(duesPeriod)}分：<strong>${yen(r.amount)}</strong>（${esc(r.method || '—')}）</p>
+      <p class="muted" style="font-size:13px">記録日時：${fmtDateTime(r.paidAt)}${r.note ? '<br>メモ：' + esc(r.note) : ''}</p>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="delDues" style="color:#b91c1c">記録を取り消す</button>
+        <button class="btn btn-primary" id="closeDues">閉じる</button>
+      </div>`);
+    $('#closeDues').addEventListener('click', closeModal);
+    $('#delDues').addEventListener('click', () => {
+      if (confirm(`${m.name} さんの${periodLabel(duesPeriod)}分の納付記録を取り消しますか？`)) {
+        Store.del('payments', r.id);
+        closeModal(); toast('取り消しました'); renderDues();
+      }
+    });
+    return;
+  }
+  openModal(`<h3>納付を記録 — ${esc(m.name)}</h3>
+    <p class="muted" style="font-size:13px;margin:0 0 14px">${periodLabel(duesPeriod)}分の組合費の納付を記録します。</p>
+    <div class="row2">
+      <div class="field"><label>金額（円）</label><input id="d_amount" type="number" min="0" value="${esc(cfg.amount ?? 100)}"></div>
+      <div class="field"><label>納付方法</label><select id="d_method">${PAY_METHODS.map(t => `<option>${t}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>メモ</label><input id="d_note" placeholder="任意"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="cancelD">キャンセル</button>
+      <button class="btn btn-primary" id="saveD">納付済みにする</button>
+    </div>`);
+  $('#cancelD').addEventListener('click', closeModal);
+  $('#saveD').addEventListener('click', () => {
+    Store.upsert('payments', {
+      id: uid(), memberId, period: duesPeriod,
+      amount: Math.max(0, parseInt($('#d_amount').value) || 0),
+      method: $('#d_method').value, note: $('#d_note').value.trim(), paidAt: Date.now(),
+    });
+    closeModal(); toast('納付を記録しました ✊'); renderDues();
+  });
+}
+
+function duesSettingsForm() {
+  const cfg = duesConfig();
+  openModal(`<h3>💰 徴収の設定</h3>
+    <p class="muted" style="font-size:13px;margin:0 0 14px">この設定は組合の全員に共有されます。決済は必ずアプリの外（ブラウザ）で行われます。</p>
+    <div class="field"><label>月額（円）</label><input id="ds_amount" type="number" min="0" value="${esc(cfg.amount ?? 100)}"></div>
+    <div class="field"><label>決済リンクURL</label><input id="ds_url" type="url" value="${esc(cfg.payUrl || '')}" placeholder="https://buy.stripe.com/..."></div>
+    <div class="field"><label>納付方法の説明</label><textarea id="ds_info" placeholder="例：毎月25日までに上記リンクからお支払いください。銀行振込の場合は◯◯銀行 普通 1234567 まで。">${esc(cfg.payInfo || '')}</textarea></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="cancelDS">キャンセル</button>
+      <button class="btn btn-primary" id="saveDS">保存</button>
+    </div>`);
+  $('#cancelDS').addEventListener('click', closeModal);
+  $('#saveDS').addEventListener('click', () => {
+    const url = $('#ds_url').value.trim();
+    if (url && !/^https:\/\//i.test(url)) { toast('決済リンクは https:// で始まるURLを入力してください'); return; }
+    Store.upsert('payments', Object.assign({}, cfg, {
+      id: DUES_CONFIG_ID,
+      amount: Math.max(0, parseInt($('#ds_amount').value) || 0),
+      payUrl: url, payInfo: $('#ds_info').value.trim(),
+    }));
+    closeModal(); toast('設定を保存しました'); renderDues();
+  });
+}
+
+function exportDuesCSV() {
+  if (!DB.members.length) { toast('名簿が空です'); return; }
+  const recs = duesRecords().filter(r => r.period === duesPeriod);
+  const byMember = new Map(recs.map(r => [r.memberId, r]));
+  const head = ['氏名', '部署', '対象月', '納付状況', '納付日', '方法', '金額', 'メモ'];
+  const rows = DB.members.map(m => {
+    const r = byMember.get(m.id);
+    return [m.name, m.dept, periodLabel(duesPeriod), r ? '納付済' : '未納',
+      r ? fmtDate(r.paidAt) : '', r ? r.method : '', r ? r.amount : '', r ? r.note : ''];
+  });
+  const csv = [head, ...rows].map(rr => rr.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  downloadFile('﻿' + csv, `組合費納付状況_${duesPeriod}.csv`, 'text/csv');
+  toast('CSVを書き出しました');
+}
+
+/* ============================================================
    クラウド接続（複数人共有）
    ============================================================ */
 function openCloudConnect() {
@@ -680,7 +862,7 @@ function openCloudConnect() {
         closeModal();
         if (Cloud.org) { switchOrg(Cloud.org.id); }
         else {
-          DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = [];
+          DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = []; DB.payments = [];
           DB.settings.unionName = '私たちの労働組合'; save();
           $('#unionNameDisplay').textContent = DB.settings.unionName; go('home');
         }
@@ -719,7 +901,7 @@ function openOrgAddForm() {
       if (first) {
         await pushLocalToCloud();  // 初回だけ端末内データを移行
       } else {
-        DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = []; save();  // 追加の組合は空から
+        DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = []; DB.payments = []; save();  // 追加の組合は空から
       }
       DB.settings.unionName = name; save();
       $('#unionNameDisplay').textContent = name;
@@ -738,7 +920,7 @@ function openOrgAddForm() {
     const btn = $('#cc_join'); btn.disabled = true; btn.textContent = '参加中…';
     try {
       const org = await Cloud.joinOrg(code);   // 成功後に手元をクリア（失敗時のデータ消失を防ぐ）
-      DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = []; save();
+      DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = []; DB.payments = []; save();
       DB.settings.unionName = org.name; save();
       $('#unionNameDisplay').textContent = org.name;
       Cloud.subscribe(refreshFromCloud);
@@ -759,7 +941,7 @@ async function switchOrg(id) {
   toast('切り替え中…');
   try { await Cloud.joinOrg(target.join_code); }  // メンバー資格を確実にしつつアクティブ化
   catch (e) { Cloud.setActive(id); }
-  DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = []; save();
+  DB.members = []; DB.cards = []; DB.notices = []; DB.polls = []; DB.votes = []; DB.payments = []; save();
   DB.settings.unionName = Cloud.org.name; save();
   $('#unionNameDisplay').textContent = Cloud.org.name;
   MY_VOTER_ID = await Cloud.userId();
@@ -769,7 +951,7 @@ async function switchOrg(id) {
 
 /* 端末内の既存データをクラウドへ初期反映（組合作成時） */
 async function pushLocalToCloud() {
-  for (const coll of ['members', 'cards', 'notices', 'polls']) {
+  for (const coll of ['members', 'cards', 'notices', 'polls', 'payments']) {
     for (const obj of DB[coll]) { try { await Cloud.upsert(coll, obj); } catch (e) { /* 続行 */ } }
   }
   for (const v of DB.votes) {

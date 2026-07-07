@@ -48,6 +48,13 @@ create table if not exists public.polls (
   updated_at timestamptz default now()
 );
 
+create table if not exists public.payments (
+  id text primary key,
+  org_id uuid references public.orgs(id) on delete cascade,
+  data jsonb not null,
+  updated_at timestamptz default now()
+);
+
 create table if not exists public.votes (
   poll_id text,
   voter_id uuid references auth.users(id) on delete cascade,
@@ -105,6 +112,7 @@ alter table public.cards       enable row level security;
 alter table public.notices     enable row level security;
 alter table public.polls       enable row level security;
 alter table public.votes       enable row level security;
+alter table public.payments    enable row level security;
 
 drop policy if exists "org read" on public.orgs;
 create policy "org read" on public.orgs for select
@@ -114,11 +122,11 @@ drop policy if exists "member read" on public.org_members;
 create policy "member read" on public.org_members for select
   using (user_id = auth.uid() or public.is_member(org_id));
 
--- members / cards / notices / polls：所属組合のみ全操作可
+-- members / cards / notices / polls / payments：所属組合のみ全操作可
 do $$
 declare t text;
 begin
-  foreach t in array array['members','cards','notices','polls'] loop
+  foreach t in array array['members','cards','notices','polls','payments'] loop
     execute format('drop policy if exists "rw %1$s" on public.%1$I;', t);
     execute format(
       'create policy "rw %1$s" on public.%1$I for all
@@ -138,7 +146,7 @@ create policy "vote write" on public.votes for all
 
 -- 6) リアルタイム配信を有効化
 alter publication supabase_realtime add table
-  public.members, public.cards, public.notices, public.polls, public.votes;
+  public.members, public.cards, public.notices, public.polls, public.votes, public.payments;
 
 -- ============================================================
 -- 実行後、ダッシュボードで以下を有効化してください：
