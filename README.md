@@ -121,6 +121,7 @@ union_app/
 ├─ cloud.js               クラウド同期層（Supabase）
 ├─ config.js              ★クラウド接続情報（URL / anonキー）を記入
 ├─ supabase_setup.sql     ★Supabaseで一度だけ実行するSQL
+├─ manual.html            使い方ガイド（アプリの設定画面からも開ける）
 ├─ manifest.webmanifest   PWA設定
 ├─ sw.js                  Service Worker（オフライン対応）
 ├─ icons/                 アプリアイコン

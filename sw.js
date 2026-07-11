@@ -1,5 +1,5 @@
 /* 労組結成ナビ Service Worker — オフライン対応 */
-const CACHE = 'union-app-v11';
+const CACHE = 'union-app-v12';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   './app.js',
   './config.js',
   './cloud.js',
+  './manual.html',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

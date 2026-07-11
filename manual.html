@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#b91c1c">
+  <title>使い方ガイド｜労組結成ナビ</title>
+  <link rel="icon" href="icons/icon-192.png">
+  <style>
+    :root {
+      --red: #b91c1c; --red-dark: #991b1b; --red-light: #fee2e2;
+      --ink: #1f2430; --muted: #6b7280; --line: #e5e7eb;
+      --bg: #f6f7f9; --card: #fff; --green: #15803d; --amber: #b45309;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink); line-height: 1.9;
+      font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", "Segoe UI", system-ui, sans-serif;
+      font-size: 15px;
+    }
+    header {
+      background: linear-gradient(135deg, var(--red), var(--red-dark)); color: #fff;
+      padding: 28px 20px 24px;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    header h1 { margin: 0; font-size: 22px; }
+    header p { margin: 6px 0 0; font-size: 13px; opacity: .9; }
+    main { max-width: 720px; margin: 0 auto; padding: 20px 16px 60px; }
+    section {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+      padding: 20px 18px; margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    h2 { font-size: 18px; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--red-light); }
+    h3 { font-size: 15px; margin: 18px 0 6px; color: var(--red); }
+    p, li { font-size: 14px; }
+    ol, ul { padding-left: 22px; margin: 6px 0; }
+    li { margin-bottom: 4px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .tip {
+      background: var(--red-light); border-radius: 10px; padding: 10px 14px;
+      font-size: 13px; margin: 10px 0;
+    }
+    .tip::before { content: "💡 "; }
+    .warn {
+      background: #fef3c7; border-radius: 10px; padding: 10px 14px;
+      font-size: 13px; margin: 10px 0;
+    }
+    .warn::before { content: "⚠️ "; }
+    .toc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .toc a {
+      display: block; background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+      padding: 10px 12px; text-decoration: none; color: var(--ink); font-size: 14px; font-weight: 600;
+    }
+    .toc a:active { background: var(--red-light); }
+    .kbd {
+      display: inline-block; background: var(--bg); border: 1px solid var(--line);
+      border-radius: 6px; padding: 0 8px; font-size: 13px; font-weight: 700;
+    }
+    .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+    .badge-green { background: #dcfce7; color: var(--green); }
+    .badge-amber { background: #fef3c7; color: var(--amber); }
+    dt { font-weight: 700; font-size: 14px; margin-top: 12px; }
+    dt::before { content: "Q. "; color: var(--red); }
+    dd { margin: 2px 0 0 0; font-size: 14px; }
+    dd::before { content: "A. "; color: var(--muted); font-weight: 700; }
+    footer { text-align: center; padding: 0 16px 40px; font-size: 12px; color: var(--muted); }
+    footer a { color: var(--muted); }
+    a.back {
+      display: inline-block; margin-top: 10px; color: #fff; font-size: 13px;
+      background: rgba(255,255,255,.18); border-radius: 999px; padding: 6px 16px; text-decoration: none;
+    }
+    @media (max-width: 480px) { .toc { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>✊ 労組結成ナビ 使い方ガイド</h1>
+      <p>労働組合づくりアプリ — 名簿・加入カード・お知らせ・投票・会費</p>
+      <a class="back" href="./">← アプリに戻る</a>
+    </div>
+  </header>
+  <main>
+
+    <section>
+      <h2>もくじ</h2>
+      <div class="toc">
+        <a href="#install">📲 インストール</a>
+        <a href="#start">🚀 はじめかた</a>
+        <a href="#home">🏠 ホーム</a>
+        <a href="#members">👥 名簿</a>
+        <a href="#card">✍️ 加入カード</a>
+        <a href="#notices">📢 お知らせ</a>
+        <a href="#polls">🗳️ 投票</a>
+        <a href="#dues">💰 会費</a>
+        <a href="#settings">⚙️ 設定・バックアップ</a>
+        <a href="#multi">🔀 複数の組合を管理</a>
+        <a href="#faq">❓ よくある質問</a>
+        <a href="#privacy">🔒 個人情報の取り扱い</a>
+      </div>
+    </section>
+
+    <section id="install">
+      <h2>📲 インストール</h2>
+      <p>このアプリはインストールしなくてもブラウザでそのまま使えますが、ホーム画面に追加すると普通のアプリと同じように起動できます。</p>
+      <h3>Android の場合</h3>
+      <ol>
+        <li>Chrome でアプリのURLを開く</li>
+        <li>画面のメニュー（<span class="kbd">⋮</span>）→ <span class="kbd">アプリをインストール</span>（または「ホーム画面に追加」）</li>
+      </ol>
+      <h3>iPhone の場合</h3>
+      <ol>
+        <li>Safari でアプリのURLを開く</li>
+        <li>共有ボタン（<span class="kbd">□↑</span>）→ <span class="kbd">ホーム画面に追加</span></li>
+      </ol>
+      <div class="tip">一度開けばオフライン（電波がない場所）でも動きます。電波が戻ると自動で同期されます。</div>
+    </section>
+
+    <section id="start">
+      <h2>🚀 はじめかた</h2>
+      <p>使い方は2通りあります。</p>
+      <h3>① 組合の代表者・言い出しっぺの人（組合をつくる）</h3>
+      <ol>
+        <li>ホームの「☁ 仲間とデータを共有しますか？」の <span class="kbd">設定</span> を押す（または画面右上 <span class="kbd">⚙️</span> → データ共有）</li>
+        <li><span class="kbd">新しく組合をつくる</span> に組合名を入れて作成</li>
+        <li>表示された <b>6桁の参加コード</b> を仲間に伝える（LINEなどでOK）</li>
+      </ol>
+      <h3>② 誘われた人（組合に参加する）</h3>
+      <ol>
+        <li>同じ場所から <span class="kbd">既存の組合に参加する</span> を選ぶ</li>
+        <li>受け取った <b>参加コード（6桁）</b> を入力</li>
+      </ol>
+      <p>これで全員が同じ名簿・お知らせ・投票・会費の情報をリアルタイムに見られます。</p>
+      <div class="warn">参加コードを知っている人は誰でも組合のデータを見られます。<b>信頼できる仲間にだけ</b>伝えてください。</div>
+      <div class="tip">共有設定をしなくても、すべての機能を「この端末だけ」で使えます。まず一人で名簿づくりを始めて、あとから共有に切り替えることもできます（端末内のデータは組合作成時に引き継がれます）。</div>
+    </section>
+
+    <section id="home">
+      <h2>🏠 ホーム</h2>
+      <ul>
+        <li><b>登録した仲間・加入カード署名</b> — 現在の人数がひと目でわかります</li>
+        <li><b>結成目標までの進捗バー</b> — 目標人数は設定（⚙️）で変更できます</li>
+        <li><b>クイック操作</b> — よく使う操作（仲間を登録・加入カード・お知らせ・投票）へのショートカット</li>
+      </ul>
+      <p class="muted">画面上部の緑のバッジ「☁ 共有モード」は仲間と共有中、「📴 この端末のみ」は共有していない状態を表します。</p>
+    </section>
+
+    <section id="members">
+      <h2>👥 名簿</h2>
+      <h3>仲間を登録する</h3>
+      <ol>
+        <li>右下の <span class="kbd">＋</span> を押す</li>
+        <li>氏名（必須）を入力。部署・雇用形態・連絡先・メモは任意</li>
+        <li><span class="kbd">保存</span></li>
+      </ol>
+      <h3>編集・削除</h3>
+      <p>名前の右の <span class="kbd">⋯</span> を押すと編集できます。削除も編集画面から行えます。</p>
+      <h3>検索・CSV</h3>
+      <p>上の検索欄で名前・部署をしぼりこめます。<span class="kbd">⬇ CSV</span> で名簿一覧をExcelで開けるファイルとして保存できます。</p>
+      <p class="muted">加入カードに署名済みの人には <span class="badge badge-green">署名済</span> が付きます。</p>
+    </section>
+
+    <section id="card">
+      <h2>✍️ 加入カード</h2>
+      <p>組合への加入意思を、同意チェックと手書き署名で記録します。</p>
+      <ol>
+        <li>名簿から加入する人を選ぶ（未登録なら「＋新しく登録する」）</li>
+        <li>同意項目を読んでチェック（上の2つは必須）</li>
+        <li>枠の中に<b>指でサイン</b>する（書き直しは <span class="kbd">消す</span>）</li>
+        <li><span class="kbd">加入カードを提出</span></li>
+      </ol>
+      <p>提出済みカードは画面下に一覧表示され、<span class="kbd">表示</span> で署名を確認できます。同じ人がもう一度提出すると、新しいカードに置き換わります。</p>
+      <div class="warn">署名は大切な個人情報です。端末には必ず画面ロックをかけてください。</div>
+    </section>
+
+    <section id="notices">
+      <h2>📢 お知らせ</h2>
+      <ul>
+        <li>右下の <span class="kbd">＋</span> で投稿。タイトル（必須）・本文・投稿者名を入力</li>
+        <li>「先頭に固定する（📌）」にチェックすると、常に一番上に表示されます（大事な連絡向け）</li>
+        <li>編集・削除は各お知らせの <span class="kbd">⋯</span> から</li>
+      </ul>
+      <p class="muted">共有モードなら、投稿は仲間の画面にもすぐ反映されます。</p>
+    </section>
+
+    <section id="polls">
+      <h2>🗳️ 投票</h2>
+      <h3>投票をつくる</h3>
+      <ol>
+        <li>右下の <span class="kbd">＋</span> を押す</li>
+        <li>質問と選択肢（2つ以上）を入力。締切は任意</li>
+        <li><span class="kbd">作成</span></li>
+      </ol>
+      <h3>投票する</h3>
+      <p>選択肢をタップするだけです。<b>1人1票</b>で、投票すると結果（票数と割合）が見えるようになります。締切前なら <span class="kbd">投票し直す</span> で変更できます。</p>
+      <h3>管理する</h3>
+      <p><span class="kbd">⋯ 管理</span> から「今すぐ締め切る」「受付を再開する」「投票を削除」ができます。</p>
+      <div class="tip">結果は投票した人（または締切後）にだけ表示されるので、他の人の投票に引きずられにくい仕組みです。</div>
+    </section>
+
+    <section id="dues">
+      <h2>💰 会費</h2>
+      <p>組合費の納付状況を月ごとに管理します。</p>
+      <h3>最初に：徴収の設定（代表者向け）</h3>
+      <ol>
+        <li>会費タブの <span class="kbd">⚙ 変更</span> を押す</li>
+        <li><b>月額</b>（例：100円）を入力</li>
+        <li>あれば<b>決済リンクURL</b>（Stripe決済リンクなど）を貼り付け</li>
+        <li><b>納付方法の説明</b>（振込先・締切日など）を書いて <span class="kbd">保存</span></li>
+      </ol>
+      <p class="muted">この設定は組合の全員に共有されます。決済リンクを設定すると「💳 組合費を納付する」ボタンが全員の画面に表示されます。</p>
+      <h3>組合費を払う（組合員）</h3>
+      <p><span class="kbd">💳 組合費を納付する</span> ボタンを押すと、外部の決済ページ（ブラウザ）が開きます。銀行振込や手渡しの場合は、画面の説明にしたがってください。</p>
+      <h3>納付を記録する</h3>
+      <ol>
+        <li>画面上部の <span class="kbd">◀ 前月</span> / <span class="kbd">翌月 ▶</span> で対象の月を選ぶ</li>
+        <li>払ってくれた人の名前をタップ</li>
+        <li>金額・納付方法（決済リンク／銀行振込／現金／その他）・メモを確認して <span class="kbd">納付済みにする</span></li>
+      </ol>
+      <p>記録すると <span class="badge badge-green">納付済</span> になり、上部に「納付済み ○／○名」と集計が表示されます。<span class="badge badge-amber">未納</span> の人は自動的にリストの上に並びます。間違えたときは、その人をもう一度タップ → <span class="kbd">記録を取り消す</span>。</p>
+      <h3>CSV書き出し</h3>
+      <p><span class="kbd">⬇ CSV</span> で、表示中の月の納付状況一覧（会計報告に使えます）を保存できます。</p>
+      <div class="warn">このアプリはお金そのものを扱いません。実際の支払いは決済リンク先や銀行で行われ、アプリは「誰がいつ払ったか」の記録だけを共有します。</div>
+    </section>
+
+    <section id="settings">
+      <h2>⚙️ 設定・バックアップ</h2>
+      <p>画面右上の <span class="kbd">⚙️</span> から開きます。</p>
+      <ul>
+        <li><b>組合名・会社/事業所名・結成目標人数</b> の変更</li>
+        <li><b>☁ データ共有</b> — 組合の作成・参加・管理（参加コードの確認もここ）</li>
+        <li><b>⬇ 全データをバックアップ（JSON）</b> — 端末内の全データをファイルに保存</li>
+        <li><b>⬆ バックアップから復元</b> — 保存したファイルから元に戻す</li>
+        <li><b>この端末のデータを消去</b> — 端末内のデータを消します（共有中のクラウド上のデータは消えません）</li>
+      </ul>
+      <div class="tip">機種変更のときは、新しい端末で参加コードを入力すれば共有データはそのまま見られます。端末のみで使っていた場合はバックアップ→復元を使ってください。</div>
+    </section>
+
+    <section id="multi">
+      <h2>🔀 複数の組合を管理する</h2>
+      <p>1つのアプリで複数の組合（例：職場の組合と業界の組合）を切り替えて使えます。</p>
+      <ol>
+        <li>画面上部の<b>組合名（ヘッダー）をタップ</b></li>
+        <li>一覧から組合名をタップすると切り替わります</li>
+        <li><span class="kbd">＋ 別の組合を作成／参加</span> で新しい組合を追加</li>
+        <li><span class="kbd">表示中の組合をこの端末から外す</span> — 端末から見えなくします（クラウド上のデータは残るので、参加コードでいつでも戻れます）</li>
+      </ol>
+      <p class="muted">組合ごとにデータは完全に分かれていて、混ざることはありません。</p>
+    </section>
+
+    <section id="faq">
+      <h2>❓ よくある質問</h2>
+      <dl>
+        <dt>新しい機能が表示されません</dt>
+        <dd>アプリを一度完全に閉じて、開き直してください。それでも変わらない場合はもう一度閉じて開くと最新版になります。</dd>
+        <dt>電波がない場所でも使えますか？</dt>
+        <dd>使えます。入力した内容は端末に保存され、電波が戻ったとき自動でクラウドと同期されます。</dd>
+        <dt>仲間の入力がすぐ反映されないのですが</dt>
+        <dd>通信状態によって数秒かかることがあります。画面を切り替えると最新の状態に更新されます。</dd>
+        <dt>参加コードを外部の人に知られたかもしれません</dt>
+        <dd>現在のバージョンでは、コードを知っている人は誰でも参加できてしまいます。心配な場合は新しい組合を作り直し、名簿などを登録し直したうえで、新しいコードを信頼できる仲間にだけ配ってください。</dd>
+        <dt>会費の支払いはアプリの中で完結しますか？</dt>
+        <dd>いいえ。実際の支払いは外部の決済ページや銀行振込で行い、アプリはその記録を共有するだけです。</dd>
+        <dt>スマホを変えたらデータはどうなりますか？</dt>
+        <dd>共有モードなら、新しい端末で参加コードを入力するだけで元どおりです。端末のみモードの場合は、古い端末で「全データをバックアップ」→新しい端末で「復元」してください。</dd>
+        <dt>間違えて納付記録をつけてしまいました</dt>
+        <dd>会費タブでその人の名前をタップし、「記録を取り消す」を押してください。</dd>
+        <dt>組合をやめる人が出たら？</dt>
+        <dd>名簿からその人を削除してください（加入カードも一緒に削除されます）。</dd>
+      </dl>
+    </section>
+
+    <section id="privacy">
+      <h2>🔒 個人情報の取り扱い</h2>
+      <ul>
+        <li>名簿・署名は<b>機微な個人情報</b>です。組合内で管理ルール（誰が登録・閲覧するか）を決めておくことをおすすめします</li>
+        <li>端末には必ず画面ロックを設定してください</li>
+        <li>バックアップファイル（JSON）にも個人情報が含まれます。取り扱いにご注意ください</li>
+        <li>共有データは暗号化された通信（HTTPS）で送受信され、参加コードを持つ組合のメンバーだけがアクセスできます</li>
+      </ul>
+      <p>詳しくは <a href="privacy.html">プライバシーポリシー</a> をご覧ください。</p>
+    </section>
+
+    <section>
+      <h2>⚖️ 免責</h2>
+      <p class="muted">加入カードの電子署名は加入意思の記録を補助するものです。法的な有効性や運用については、各組合の規約や、労働委員会・弁護士等の専門家の助言にしたがってください。</p>
+    </section>
+
+  </main>
+  <footer>
+    労組結成ナビ｜運営：ポジティブキャリア<br>
+    <a href="./">アプリを開く</a>・<a href="privacy.html">プライバシーポリシー</a>
+  </footer>
+</body>
+</html>

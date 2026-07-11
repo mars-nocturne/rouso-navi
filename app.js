@@ -978,6 +978,7 @@ function openSettings() {
     <div class="field"><label>結成目標人数</label><input id="s_target" type="number" min="1" value="${esc(s.targetMembers)}"></div>
     <hr class="div">
     <div class="btn-row" style="flex-direction:column">
+      <button class="btn btn-ghost" id="openManual">📖 使い方ガイド</button>
       <button class="btn btn-ghost" id="exportAll">⬇ 全データをバックアップ（JSON）</button>
       <button class="btn btn-ghost" id="importAll">⬆ バックアップから復元</button>
       <input type="file" id="importFile" accept="application/json" hidden>
@@ -989,6 +990,7 @@ function openSettings() {
     </div>
   `);
   $('#s_cloud').addEventListener('click', () => { closeModal(); openCloudConnect(); });
+  $('#openManual').addEventListener('click', () => window.open('manual.html', '_blank', 'noopener'));
   $('#cancelS').addEventListener('click', closeModal);
   $('#saveS').addEventListener('click', () => {
     s.unionName = $('#s_union').value.trim() || '私たちの労働組合';
